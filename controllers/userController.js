@@ -1,9 +1,6 @@
 const uid2 = require('uid2')
 const User = require('../models/Users')
 const Order = require('../models/Orders')
-const mealsModel = require('../models/Meals')
-
-const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const validateEmail = require('../functions/validateEmails') //import function to check emails
 const sendEmail = require('../functions/sendEmail')
@@ -47,14 +44,7 @@ exports.signUp = async (req, res, next) => {
 			email: req.body.emailFromFront,
 			phone: req.body.phoneFromFront,
 			password: hash,
-			token: uid2(32),
-			adresse: req.body.adresse,
-			allergies: [req.body.allergies],
-			regimeAlim: req.body.regimeAlim,
-			dont: [req.body.dont],
-			//orders et favorites doivent recevoir des clées étrangeres, la bdd etant vide on recupère juste des datas depuis postman en attendant
-			orders: [req.body.orders],
-			favorites: [req.body.favorites],
+			token: uid2(32)
 		})
 		// Save user in MongoDB
 		saveUser = await newUser.save()
@@ -70,7 +60,7 @@ exports.signUp = async (req, res, next) => {
 			})
 		}
 		// Response Object
-		res.json({ result, saveUser, token })
+		res.json({ result, token })
 		// Catch error & send to front
 	} catch (err) {
 		let error = err.message
@@ -78,6 +68,7 @@ exports.signUp = async (req, res, next) => {
 		// Response Object
 		res.statusCode = 400
 		res.json({
+			result: false,
 			error,
 		})
 	}
@@ -110,7 +101,7 @@ exports.signIn = async (req, res, next) => {
 			throw Error('Bad Email!')
 		}
 		// Response Object
-		res.json({ result, user, token })
+		res.json({ result, token })
 	} catch (err) {
 		// Catch error & send to front
 		// Create error variable with err.message
@@ -154,11 +145,10 @@ exports.getUserInfo = async (req, res, next) => {
 
 exports.favorites = async (req, res, next) => {
 	try {
-		var favorites = await User.findOne({ token: req.params.token })
+		var user = await User.findOne({ token: req.params.token })
 			.populate('favorites')
-			.exec()
 
-		res.json({ result: 'success', favorites: favorites.favorites })
+		res.json({ result: 'success', favorites: user.favorites })
 	} catch (err) {
 		// Catch error
 		// console.log(err)
@@ -170,7 +160,7 @@ exports.favoritesAdd = async (req, res, next) => {
 	try {
 		var favList = await User.findOne({ token: req.body.token })
 			.populate('favorites')
-			.exec()
+
 		var favList = favList.favorites
 		var doublon
 
@@ -200,10 +190,9 @@ exports.favoritesDel = async (req, res, next) => {
 			{ $pull: { favorites: req.params.meal_id } }
 		)
 
-		var favorites = await User.findOne({ token: req.params.token }).populate(
-			'favorites'
-		)
-		res.json({ result: 'success', favorites: favorites })
+		var favorites = await User.findOne({ token: req.params.token })
+			.populate('favorites')
+		res.json({ result: 'success', favorites: favorites.favorites })
 	} catch (err) {
 		// Catch error
 		res.statusCode = 400
@@ -220,7 +209,7 @@ exports.updateUser = async (req, res, next) => {
 			{ new: true }
 		)
 		if (!doc) {
-			throw new Error("User could'n be updated")
+			throw new Error("User couldn't be updated")
 		}
 		res.json({ result: 'success', doc })
 	} catch (err) {
@@ -246,9 +235,9 @@ exports.updateUserAddress = async (req, res, next) => {
 exports.history = async (req, res, next) => {
 	try {
 		var user = await User.findOne({ token: req.params.token })
-		// console.log('req.params', req.params)
 
 		var orders = await Order.find({ client: user._id }).populate('meals')
+		// console.log(orders)
 
 		var meals = orders.map((order, i) => {
 			return {
@@ -266,10 +255,9 @@ exports.history = async (req, res, next) => {
 
 exports.getAllergies = async (req, res, next) => {
 	try {
-		var allergies = await User.findOne({ token: req.params.token })
-			.populate('allergies')
-			.exec()
-		res.json({ result: 'success', allergies: allergies.allergies })
+		var user = await User.findOne({ token: req.params.token })
+
+		res.json({ result: 'success', allergies: user.allergies })
 	} catch (err) {
 		res.statusCode = 400
 		// Catch error
@@ -280,21 +268,17 @@ exports.getAllergies = async (req, res, next) => {
 exports.delAllergies = async (req, res, next) => {
 	console.log('test routes delAllergies')
 	try {
-		var allergies = await User.findOne({ token: req.params.token })
-			.populate('allergies')
-			.exec()
-		console.log('allergies in back', allergies)
-		var allergyList = allergies.allergies
+		var user = await User.findOne({ token: req.params.token })
+
+		var allergyList = user.allergies
 		allergies = allergyList.filter(element => element !== req.params.allergy)
 
 		var delAllergies = await User.updateOne(
 			{ token: req.params.token },
 			{ allergies: allergies }
 		)
-		console.log(req.params.allergy)
-		var newAllergies = await User.findOne({ token: req.params.token }).populate(
-			'allergies'
-		)
+
+		var newAllergies = await User.findOne({ token: req.params.token })
 
 		res.json({ result: 'success', allergies: newAllergies })
 	} catch (err) {
@@ -306,13 +290,11 @@ exports.delAllergies = async (req, res, next) => {
 
 exports.donts = async (req, res, next) => {
 	try {
-		var donts = await User.findOne({ token: req.params.token })
-			.populate('dont')
-			.exec()
+		var user = await User.findOne({ token: req.params.token })
 
-		console.log('donts =>', donts.dont)
+		console.log('donts =>', user.dont)
 
-		res.json({ result: true, donts: donts.dont })
+		res.json({ result: true, donts: user.dont })
 	} catch (err) {
 		res.json({ result: false, message: err.message })
 	}
@@ -333,17 +315,12 @@ exports.addToBlacklist = async (req, res, next) => {
 
 exports.adddonts = async (req, res, next) => {
 	try {
-		var adddonts = await User.findOne({ token: req.params.token })
-			.populate('dont')
-			.exec()
 
 		const updateDonts = await User.findOneAndUpdate(
 			{ token: req.params.token },
 			{ $push: { dont: req.body.dont } },
-			{ new: true }
+			{ new: true } //récupérer le nouveau doc updated
 		)
-
-		console.log('adddonts', adddonts.dont)
 
 		res.json({ result: true, donts: updateDonts })
 	} catch (err) {
@@ -353,12 +330,6 @@ exports.adddonts = async (req, res, next) => {
 
 exports.deletedonts = async (req, res, next) => {
 	try {
-		// var dontToDelete = await User.findOne({ token: req.params.token })
-		// 	.populate('dont')
-		// 	.exec()
-
-		console.log('deletedonts', req.body.dont)
-
 		const updateDonts = await User.findOneAndUpdate(
 			{ token: req.params.token },
 			{ $pull: { dont: req.params.dont } },

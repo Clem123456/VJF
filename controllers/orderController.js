@@ -1,14 +1,9 @@
-const mongoose = require('mongoose')
 const User = require('../models/Users')
 const Order = require('../models/Orders')
 const Meal = require('../models/Meals')
-const Restaurant = require('../models/Restaurants')
 const dotenv = require('dotenv')
-
 dotenv.config({ path: './config.env' })
-const stripe = require('stripe')
-const stripePK = process.env.PUBLISHABLE_KEY
-const stripeSK = (process.env.SECRET_KEY, { apiVersion: "2020-08-27" })
+const stripe = require('stripe')(process.env.SECRET_KEY);
 
 // Distance max de livraison, en km
 const MAX_DISTANCE = 3
@@ -48,10 +43,10 @@ exports.makeOrder = async (req, res, next) => {
 					'a partager',
 				]
 
-		const lng = req.body.coords.lat
 		const lat = req.body.coords.lng
+		const lng = req.body.coords.lat
 		const maxDistance = MAX_DISTANCE
-		const radius = maxDistance / 6378.1 // radians (unit needed to use $centerSphere, dont ask!)
+		const radius = maxDistance / 6378.1 // radians (unit needed to use $centerSphere, don't ask!)
 
 		// find all the meals that fit the user profile
 		const meals = await Meal.find({
@@ -156,6 +151,7 @@ exports.makeOrderInFav = async (req, res, next) => {
 	try {
 		// Get the current user
 		const user = await User.findOne({ token: req.params.token })
+			.populate('favorites')
 		if (!user) {
 			res.json({
 				result: 'fail',
@@ -163,9 +159,8 @@ exports.makeOrderInFav = async (req, res, next) => {
 			})
 			return
 		}
-		const meals = await user.populate('favorites')
 		// Get meals from favorites
-		const favmeals = meals.favorites
+		const favmeals = user.favorites
 		// select one random meal among the returned meals
 		const selectedMeal = favmeals[Math.floor(Math.random() * favmeals.length)]
 		// handle case when no meal fits all the criteria
@@ -199,38 +194,15 @@ exports.makeOrderInFav = async (req, res, next) => {
 	}
 }
 exports.payment = async (req, res, next) => {
-	const stripe = require('stripe')('sk_test_51JrTrKGYLeZVv03JtV4ehIwMYnh4ZbIWpgUDdiIZlMi0OLOeGhlfcCeznynmhLCYv1vVizIvaLK5d8TI8hoa1MoM00vwNDE24q');
-	const { paymentMethodType, currency } = req.body;
-	var prix = req.body.price * 100
+
+	var prix = req.body.price * 100 //default cents
 	const params = {
-		payment_method_types: [paymentMethodType],
+		payment_method_types: ['card'],
 		amount: prix,
 		currency: "eur",
 	}
-	const paymentIntent = await stripe.paymentIntents.create({
-		payment_method_types: ['card'],
-		amount: params.amount,
-		currency: params.currency,
-	});
-	const clientSecret = paymentIntent.client_secret
-	// If this is for an ACSS payment, we add payment_method_options to create
-	// the Mandate.
-	if (paymentMethodType === 'acss_debit') {
-		params.payment_method_options = {
-			acss_debit: {
-				mandate_options: {
-					payment_schedule: 'sporadic',
-					transaction_type: 'personal',
-				},
-			},
-		}
-	}
-
 	// Create a PaymentIntent with the amount, currency, and a payment method type.
-	//
-	// See the documentation [0] for the full list of supported parameters.
-	//
-	// [0] https://stripe.com/docs/api/payment_intents/create
+
 	try {
 		const paymentIntent = await stripe.paymentIntents.create(params);
 

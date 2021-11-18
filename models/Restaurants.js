@@ -2,7 +2,7 @@ var mongoose = require('mongoose')
 
 var restaurantsSchema = mongoose.Schema({
 	name: String,
-	location: {
+	locaton: {
 		type: {
 			type: String,
 			default: 'Point',

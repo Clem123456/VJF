@@ -33,12 +33,12 @@ router.get('/me/:token', getUserInfo)
 router.get('/history/:token', history)
 router.get('/allergies/:token/', getAllergies)
 router.delete('/delallergies/:token/:allergy', delAllergies)
-router.get('/myDonts/:token', donts)
 router.put('/update-diet', updateDiet)
 
 // gestion Blacklist
 router.put('/blacklist/:token', addToBlacklist)
 
+router.get('/myDonts/:token', donts)
 router.post('/adddonts/:token', adddonts)
 router.delete('/deletedonts/:token/:dont', deletedonts)
 module.exports = router

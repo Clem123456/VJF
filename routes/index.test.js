@@ -24,7 +24,8 @@ test("Get Infos from Bad User", async () => {
 });
 
 test("Test - SignIn", async () => {
-  await request(app).post('/users/sign-in')
+  await request(app)
+    .post('/users/sign-in')
     .send({ emailFromFront: 'fab@fab', passwordFromFront: "Fab" })
     .expect(200)
     .then((response) => {
