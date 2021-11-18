@@ -110,6 +110,7 @@ exports.signIn = async (req, res, next) => {
 		res.statusCode = 400
 		// Response Object
 		res.json({
+			result: false,
 			status: 'fail',
 			error,
 		})
