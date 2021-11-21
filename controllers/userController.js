@@ -8,10 +8,6 @@ const sendEmail = require('../functions/sendEmail')
 exports.signUp = async (req, res, next) => {
 	let result = false
 	let token = null
-	console.log('lastname ', req.body.lastNameFromFront)
-	console.log('firstname ', req.body.firstNameFromFront)
-	console.log('email ', req.body.emailFromFront)
-	console.log('pass ', req.body.passwordFromFront)
 	try {
 		// Check if this user already exist
 		let user = await User.findOne({ email: req.body.emailFromFront })
@@ -137,8 +133,6 @@ exports.getUserInfo = async (req, res, next) => {
 
 		res.json({ result: 'success', userInfo })
 	} catch (err) {
-		// Catch error
-		// console.log(err)
 		res.statusCode = 400
 		res.json({ result: false, message: err.message })
 	}
@@ -151,8 +145,6 @@ exports.favorites = async (req, res, next) => {
 
 		res.json({ result: 'success', favorites: user.favorites })
 	} catch (err) {
-		// Catch error
-		// console.log(err)
 		res.json({ result: false, message: err.message })
 	}
 }
@@ -195,7 +187,6 @@ exports.favoritesDel = async (req, res, next) => {
 			.populate('favorites')
 		res.json({ result: 'success', favorites: favorites.favorites })
 	} catch (err) {
-		// Catch error
 		res.statusCode = 400
 		res.json({ result: false, message: err.message })
 	}
@@ -238,7 +229,6 @@ exports.history = async (req, res, next) => {
 		var user = await User.findOne({ token: req.params.token })
 
 		var orders = await Order.find({ client: user._id }).populate('meals')
-		// console.log(orders)
 
 		var meals = orders.map((order, i) => {
 			return {
@@ -261,13 +251,11 @@ exports.getAllergies = async (req, res, next) => {
 		res.json({ result: 'success', allergies: user.allergies })
 	} catch (err) {
 		res.statusCode = 400
-		// Catch error
 		res.json({ result: false, message: err.message })
 	}
 }
 
 exports.delAllergies = async (req, res, next) => {
-	console.log('test routes delAllergies')
 	try {
 		var user = await User.findOne({ token: req.params.token })
 
@@ -292,8 +280,6 @@ exports.delAllergies = async (req, res, next) => {
 exports.donts = async (req, res, next) => {
 	try {
 		var user = await User.findOne({ token: req.params.token })
-
-		console.log('donts =>', user.dont)
 
 		res.json({ result: true, donts: user.dont })
 	} catch (err) {

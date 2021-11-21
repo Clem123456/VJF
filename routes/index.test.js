@@ -31,6 +31,7 @@ test("Test SignIn with bad password", async () => {
     .expect(400)
     .then((response) => {
       expect(response.body.result).toBe(false)
+      expect(response.body.error).toBe("Bad password!")
     });
 });
 
