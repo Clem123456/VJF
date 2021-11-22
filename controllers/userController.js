@@ -138,6 +138,69 @@ exports.getUserInfo = async (req, res, next) => {
 	}
 }
 
+exports.updateUser = async (req, res, next) => {
+	try {
+		const { diet, dont, allergies } = req.body
+		const doc = await User.findOneAndUpdate(
+			{ token: req.params.token },
+			{ regimeAlim: diet, dont: dont, allergies: allergies },
+			{ new: true }
+		)
+		if (!doc) {
+			throw new Error("User couldn't be updated")
+		}
+		res.json({ result: 'success', doc })
+	} catch (err) {
+		res.statusCode = 400
+		res.json({ result: false, message: err.message })
+	}
+}
+exports.updateUserAddress = async (req, res, next) => {
+	try {
+		await User.findOneAndUpdate(
+			{ token: req.params.token },
+			{ adresse: req.body.address }
+		)
+
+		res.json({ result: 'success' })
+	} catch (err) {
+		res.statusCode = 400
+		res.json({ result: false, message: err.message })
+	}
+}
+exports.updateDiet = async (req, res, next) => {
+	try {
+		const user = await User.findOneAndUpdate(
+			{ token: req.body.token },
+			{ regimeAlim: req.body.diet },
+			{ new: true }
+		)
+		res.json({ result: true, newDiet: user.regimeAlim })
+	} catch (err) {
+		res.json({ result: false, message: err.message })
+	}
+}
+
+exports.history = async (req, res, next) => {
+	try {
+		var user = await User.findOne({ token: req.params.token })
+
+		var orders = await Order.find({ client: user._id }).populate('meals')
+
+		var meals = orders.map((order, i) => {
+			return {
+				mealName: order.meals[0].name,
+				date: order.date,
+				mealId: order.meals[0]._id,
+			}
+		})
+		res.json({ result: true, meals: meals })
+	} catch (err) {
+		res.statusCode = 400
+		res.json({ result: false, message: err.message })
+	}
+}
+
 exports.favorites = async (req, res, next) => {
 	try {
 		var user = await User.findOne({ token: req.params.token })
@@ -192,58 +255,6 @@ exports.favoritesDel = async (req, res, next) => {
 	}
 }
 
-exports.updateUser = async (req, res, next) => {
-	try {
-		const { diet, dont, allergies } = req.body
-		const doc = await User.findOneAndUpdate(
-			{ token: req.params.token },
-			{ regimeAlim: diet, dont: dont, allergies: allergies },
-			{ new: true }
-		)
-		if (!doc) {
-			throw new Error("User couldn't be updated")
-		}
-		res.json({ result: 'success', doc })
-	} catch (err) {
-		res.statusCode = 400
-		res.json({ result: false, message: err.message })
-	}
-}
-
-exports.updateUserAddress = async (req, res, next) => {
-	try {
-		await User.findOneAndUpdate(
-			{ token: req.params.token },
-			{ adresse: req.body.address }
-		)
-
-		res.json({ result: 'success' })
-	} catch (err) {
-		res.statusCode = 400
-		res.json({ result: false, message: err.message })
-	}
-}
-
-exports.history = async (req, res, next) => {
-	try {
-		var user = await User.findOne({ token: req.params.token })
-
-		var orders = await Order.find({ client: user._id }).populate('meals')
-
-		var meals = orders.map((order, i) => {
-			return {
-				mealName: order.meals[0].name,
-				date: order.date,
-				mealId: order.meals[0]._id,
-			}
-		})
-		res.json({ result: true, meals: meals })
-	} catch (err) {
-		res.statusCode = 400
-		res.json({ result: false, message: err.message })
-	}
-}
-
 exports.getAllergies = async (req, res, next) => {
 	try {
 		var user = await User.findOne({ token: req.params.token })
@@ -287,19 +298,6 @@ exports.donts = async (req, res, next) => {
 	}
 }
 
-exports.addToBlacklist = async (req, res, next) => {
-	try {
-		const user = await User.findOneAndUpdate(
-			{ token: req.params.token },
-			{ $addToSet: { blacklist: req.body.mealId } },
-			{ new: true }
-		)
-		res.json({ result: true, user })
-	} catch (err) {
-		res.json({ result: false, message: err.message })
-	}
-}
-
 exports.adddonts = async (req, res, next) => {
 	try {
 
@@ -329,14 +327,15 @@ exports.deletedonts = async (req, res, next) => {
 	}
 }
 
-exports.updateDiet = async (req, res, next) => {
+
+exports.addToBlacklist = async (req, res, next) => {
 	try {
 		const user = await User.findOneAndUpdate(
-			{ token: req.body.token },
-			{ regimeAlim: req.body.diet },
+			{ token: req.params.token },
+			{ $addToSet: { blacklist: req.body.mealId } },
 			{ new: true }
 		)
-		res.json({ result: true, newDiet: user.regimeAlim })
+		res.json({ result: true, user })
 	} catch (err) {
 		res.json({ result: false, message: err.message })
 	}

@@ -5,11 +5,11 @@ dotenv.config({ path: './config.env' })
 
 const sendEmail = async options => {
 	const transporter = nodemailer.createTransport({
-		host: EMAIL_HOST,
-		port: EMAIL_PORT,
+		host: process.env.EMAIL_HOST,
+		port: process.env.EMAIL_PORT,
 		auth: {
-			user: EMAIL_USERNAME,
-			pass: EMAIL_PASSWORD,
+			user: process.env.EMAIL_USERNAME,
+			pass: process.env.EMAIL_PASSWORD,
 		},
 	})
 
@@ -18,7 +18,6 @@ const sendEmail = async options => {
 		to: options.email,
 		subject: options.subject,
 		text: options.message,
-		// html:
 	}
 
 	await transporter.sendMail(mailOptions)
