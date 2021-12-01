@@ -7,7 +7,7 @@ dotenv.config({ path: './config.env' })
 const stripe = require('stripe')(process.env.SECRET_KEY);
 
 // Distance max de livraison, en km
-const MAX_DISTANCE = 300
+const MAX_DISTANCE = 3
 
 exports.makeOrder = async (req, res, next) => {
 	try {
